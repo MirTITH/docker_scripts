@@ -21,8 +21,7 @@ ARG ROS2_MIRROR_URL=https://mirrors.ustc.edu.cn/ros2/ubuntu
 RUN rm /etc/apt/sources.list.d/ros2-latest.list
 RUN apt-get update && apt-get install -y curl gnupg2 \ 
     && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] $ROS2_MIRROR_URL jammy main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
-
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] $ROS2_MIRROR_URL $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 # Remove docker-clean to enable auto-completion for apt
 RUN rm /etc/apt/apt.conf.d/docker-clean
 
