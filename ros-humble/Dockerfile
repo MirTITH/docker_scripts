@@ -47,8 +47,9 @@ RUN sudo apt-get update && sudo apt-get upgrade -y \
 # Install Gazebo
 RUN sudo apt-get update && sudo apt-get install -y ros-humble-gazebo-ros-pkgs
 
-# Get rid of EasyInstallDeprecationWarning
-RUN pip install setuptools==58.2.0
+# Get rid of EasyInstallDeprecationWarning. 
+# (This warning seems to have been fixed.)
+# RUN pip install setuptools==58.2.0
 
 RUN colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml && colcon mixin update default
 
