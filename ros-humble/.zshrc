@@ -102,6 +102,10 @@ rr() {
     export _colcon_cd_root=/opt/ros/humble/
 }
 
+rs() {
+    . install/setup.zsh
+}
+
 rr
 
 # export MANPATH="/usr/local/man:$MANPATH"
