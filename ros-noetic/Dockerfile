@@ -13,9 +13,9 @@ COPY mirrors/ubuntu_20.04_ustc.list /etc/apt/sources.list
 # COPY mirrors/ubuntu_20.04_osa.list /etc/apt/sources.list
 
 
-# Change ROS 2 source list
-ARG ROS_MIRROR_URL=https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu
-# ARG ROS_MIRROR_URL=https://mirrors.ustc.edu.cn/ros/ubuntu
+# Change ROS source list
+ARG ROS_MIRROR_URL=https://mirrors.ustc.edu.cn/ros/ubuntu
+# ARG ROS_MIRROR_URL=https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu
 # ARG ROS_MIRROR_URL=https://mirrors.osa.moe/ros/ubuntu/
 
 RUN rm /etc/apt/sources.list.d/ros1-latest.list \
