@@ -25,14 +25,15 @@ RUN apt-get update && apt-get install -y tzdata && \
 
 
 # Change ROS 2 source list
+# ROS 2 在 2025 年 6 月左右更换了软件源的签名，并改用 ros2-apt-source.deb 来配置源。
+# ros2-apt-source.deb 会创建 /etc/apt/sources.list.d/ros2.sources 文件，并在自身更新时自动更新软件源的配置，但默认情况下会使用官方源。
+# 如需使用镜像源，可以修改 /etc/apt/sources.list.d/ros2.sources 文件中的 URL。但需要注意的是，ros2-apt-source.deb 会在每次更新时覆盖该文件，因此需要在每次更新后重新修改。
 # ARG ROS2_MIRROR_URL=https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu
 # ARG ROS2_MIRROR_URL=https://mirrors.ustc.edu.cn/ros2/ubuntu
-ARG ROS2_MIRROR_URL=https://mirrors.osa.moe/ros2/ubuntu
-
-# RUN rm /etc/apt/sources.list.d/ros2.list
-RUN apt-get update && apt-get install -y curl gnupg2 \ 
-    && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] $ROS2_MIRROR_URL jammy main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+# ARG ROS2_MIRROR_URL=https://mirrors.osa.moe/ros2/ubuntu
+# RUN apt-get update && apt-get install -y curl gnupg2 \ 
+#     && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
+#     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] $ROS2_MIRROR_URL jammy main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 # Remove docker-clean to enable auto-completion for apt
 RUN rm /etc/apt/apt.conf.d/docker-clean
