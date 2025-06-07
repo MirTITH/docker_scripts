@@ -32,7 +32,7 @@ echo "IMAGE_NAME: $IMAGE_NAME"
 DOCKER_ARGS=(
     build -f $DOCKERFILE_PATH -t $IMAGE_NAME $script_dir
     --build-arg DOCKER_FILE_FOLDER=$DOCKERFILE_FOLDER
-    --no-cache
+    # --no-cache
     # --build-arg "http_proxy=http://localhost:7890"
     # --build-arg "https_proxy=http://localhost:7890"
     # --build-arg "all_proxy=socks5://localhost:7890"
