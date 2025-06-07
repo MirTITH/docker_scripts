@@ -225,12 +225,19 @@ class DockerCmdGenerator:
         cmd_args.extend(self.__get_mount_args("/tmp/.X11-unix", "/tmp/.X11-unix", path_type="dir", options="rw"))
         env_DISPLAY = os.getenv("DISPLAY")
         if env_DISPLAY != ":0":
-            print(f"{YELLOW}Warning: $DISPLAY is set to {env_DISPLAY}")
-            print(f"{YELLOW}    Usually, $DISPLAY should be set to :0")
-            print(f"{YELLOW}    This may becaused by running the script in a non-GUI environment, VNC environment or using vscode remote-ssh.{RESET}")
-            print(f"{YELLOW}    GUI applications may not work properly.{RESET}")
-            print(f"{YELLOW}    To fix this, run the script in a GUI environment or run the following command before running the script:{RESET}")
-            print(f"{YELLOW}    export DISPLAY=:0{RESET}")
+            print(
+                f"{YELLOW}"
+                f"Warning: $DISPLAY is set to {env_DISPLAY}\n"
+                f"  Normally, $DISPLAY should be ':0', indicating the first local display.\n"
+                f"  This may occur if you are running the script in a non-GUI environment, a VNC session, or via VSCode Remote-SSH.\n"
+                f"  In such cases, GUI applications inside the container may not function properly.\n"
+                f"  However, there are scenarios where $DISPLAY is set to values like ':1' or ':2', which can be valid.\n"
+                f"  To verify if the current $DISPLAY is valid, exit this script and try running a GUI application (e.g., gedit, xclock, firefox) in the same terminal.\n"
+                f"  If the application launches successfully, you can proceed with the current $DISPLAY.\n"
+                f"  If not, you may set $DISPLAY to ':0' by running:\n\n"
+                f"    export DISPLAY=:0\n"
+                f"{RESET}"
+            )
             if ask_user_to_continue(f"Continue with $DISPLAY={env_DISPLAY}?") == False:
                 sys.exit(1)
         cmd_args.extend(["--env", "DISPLAY"])
