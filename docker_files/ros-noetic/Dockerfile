@@ -1,9 +1,7 @@
 FROM osrf/ros:noetic-desktop-full
 
-ARG DOCKER_FILE_FOLDER
-
 # Create a non-root user
-ARG USERNAME=docker_user
+ARG USERNAME=ubuntu
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
@@ -18,7 +16,7 @@ ARG ROS_MIRROR_URL=https://mirrors.ustc.edu.cn/ros/ubuntu
 # ARG ROS_MIRROR_URL=https://mirrors.tuna.tsinghua.edu.cn/ros/ubuntu
 # ARG ROS_MIRROR_URL=https://mirrors.osa.moe/ros/ubuntu/
 
-RUN rm /etc/apt/sources.list.d/ros1-latest.list \
+RUN rm /etc/apt/sources.list.d/ros1-snapshots.list \
     && apt-get update && apt-get install -y curl \
     && sh -c 'echo "deb $ROS_MIRROR_URL $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' \
     && curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add - \
@@ -39,12 +37,12 @@ RUN groupadd --gid $USER_GID $USERNAME \
 USER $USERNAME
 WORKDIR /home/$USERNAME
 
-# Install some dependencies packages
+# Install dependencies
 RUN sudo apt-get update && sudo apt-get upgrade -y \
     && sudo apt-get install -y \
-    git net-tools vim bash-completion psmisc pulseaudio gdb wget \
-    iputils-ping zsh breeze qt5ct fonts-noto-cjk python3-pip \
-    python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential 
+    git net-tools vim bash-completion psmisc pulseaudio gdb \
+    iputils-ping zsh breeze qt5ct fonts-noto-cjk wget \
+    python3-pip python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential 
 
 # Add user to video group to allow access to webcam
 RUN sudo usermod --append --groups video $USERNAME
@@ -57,9 +55,9 @@ RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/inst
     && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
     && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
-COPY --chown=$USERNAME:$USERNAME $DOCKER_FILE_FOLDER/.zshrc /home/$USERNAME/
-COPY --chown=$USERNAME:$USERNAME $DOCKER_FILE_FOLDER/.bash_aliases /home/$USERNAME/
-COPY --chown=$USERNAME:$USERNAME common_files/.p10k.zsh /home/$USERNAME/
+COPY --chown=$USERNAME:$USERNAME copy_files/.zshrc /home/$USERNAME/
+COPY --chown=$USERNAME:$USERNAME copy_files/.bash_aliases /home/$USERNAME/
+COPY --chown=$USERNAME:$USERNAME copy_files/.p10k.zsh /home/$USERNAME/
 
 RUN git config --global core.quotepath false
 
@@ -68,6 +66,7 @@ RUN git config --global core.quotepath false
 # the `.config` directory will be created with root permission, and the user will not be able to write to it.
 RUN mkdir -p /home/$USERNAME/.config
 RUN mkdir -p /home/$USERNAME/.local
+COPY --chown=$USERNAME:$USERNAME copy_files/ros_rc/noetic /home/$USERNAME/.local/ros_rc
 
 ENTRYPOINT []
 CMD ["/bin/zsh"]

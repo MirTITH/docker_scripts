@@ -92,21 +92,9 @@ if [[ -f ~/.local/common_rc ]]; then
     source ~/.local/common_rc
 fi
 
-rr() {
-    # For zsh, ros-jazzy
-    # eval "$(register-python-argcomplete3 ros2)"
-    # eval "$(register-python-argcomplete3 colcon)"
-    source /opt/ros/jazzy/setup.zsh
-    source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.zsh
-    source /usr/share/colcon_cd/function/colcon_cd.sh
-    export _colcon_cd_root=/opt/ros/jazzy/
-}
-
-rs() {
-    . install/setup.zsh
-}
-
-rr
+if [ -f $HOME/.local/ros_rc ]; then
+    source $HOME/.local/ros_rc
+fi
 
 # export MANPATH="/usr/local/man:$MANPATH"
 

@@ -7,7 +7,7 @@ script_dir=$(dirname "$script_path")   # 脚本文件的目录
 
 print_usage() {
     echo "Usage: $0 DOCKERFILE_FOLDER IMAGE_NAME"
-    echo "Example: $0 ros-humble my-ros-humble"
+    echo "Example: $0 docker_files/ros-humble my-ros-humble"
 }
 
 # Docker file folder
@@ -31,7 +31,6 @@ echo "IMAGE_NAME: $IMAGE_NAME"
 # Build the image
 DOCKER_ARGS=(
     build -f $DOCKERFILE_PATH -t $IMAGE_NAME $script_dir
-    --build-arg DOCKER_FILE_FOLDER=$DOCKERFILE_FOLDER
     # --no-cache
     # --build-arg "http_proxy=http://localhost:7890"
     # --build-arg "https_proxy=http://localhost:7890"

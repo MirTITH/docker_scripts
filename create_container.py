@@ -284,7 +284,7 @@ def main():
     )
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    default_rc_file = os.path.join(script_dir, "common_rc")
+    default_rc_file = os.path.join(script_dir, "mount/common_rc")
     default_clangd_path = os.path.join(script_dir, "mount/clangd")
 
     parser.add_argument("image-name", help="The name of the image to create the container from")
@@ -294,7 +294,7 @@ def main():
         help=f'The rc file to source in the container, which will be mounted to /home/<user_name>/.local/common_rc.\nThe default value is {BLUE}{default_rc_file}{RESET}. Give "" to not mount any rc file.',
         default=default_rc_file,
     )
-    parser.add_argument("--user-name", help="The user to run the container as.", default="docker_user")
+    parser.add_argument("--user-name", help="The user to run the container as.", default="ubuntu")
     parser.add_argument("--user-data", help="The directory to store user data. It will be mounted to /home/<user_name>/user_data")
     parser.add_argument("--no-nv", help="Do not enable NVIDIA GPU", action="store_true")
     parser.add_argument("--volume", "-v", help="Mount a volume from the host to the container", action="append")

@@ -1,0 +1,17 @@
+rr() {
+    alias rosdep_install='rosdep install --from-paths src --ignore-src -r -y'
+
+    # 判断当前 shell 类型
+    current_shell=$(ps -p $$ -o comm=)
+
+    if [[ "$current_shell" == "bash" ]]; then
+        source /opt/ros/noetic/setup.bash
+    elif [[ "$current_shell" == "zsh" ]]; then
+        source /opt/ros/noetic/setup.zsh
+    else
+        echo "未识别的 shell: $current_shell"
+    fi
+}
+
+# Uncomment the following line to automatically source the ROS 2 environment
+# rr

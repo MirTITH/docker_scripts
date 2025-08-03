@@ -3,7 +3,7 @@ FROM nvcr.io/nvidia/l4t-base:35.4.1
 ARG DOCKER_FILE_FOLDER
 
 # Create a non-root user
-ARG USERNAME=docker_user
+ARG USERNAME=ubuntu
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
