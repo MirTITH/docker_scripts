@@ -66,7 +66,6 @@ RUN git config --global core.quotepath false
 # the `.config` directory will be created with root permission, and the user will not be able to write to it.
 RUN mkdir -p /home/$USERNAME/.config
 RUN mkdir -p /home/$USERNAME/.local
-COPY --chown=$USERNAME:$USERNAME copy_files/ros_rc/noetic /home/$USERNAME/.local/ros_rc
 
 ENTRYPOINT []
 CMD ["/bin/zsh"]

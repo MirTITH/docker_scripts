@@ -33,6 +33,7 @@ ARG ROS2_MIRROR_URL=https://mirrors.ustc.edu.cn/ros2/ubuntu
 # If ROS2_MIRROR_URL is set, replace the ROS 2 source URL
 RUN if [ -n "$ROS2_MIRROR_URL" ]; then \
     apt purge -y ros2-apt-source; \
+    if [ -f /etc/apt/sources.list.d/ros2-latest.list ]; then rm /etc/apt/sources.list.d/ros2-latest.list; fi; \
     curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg; \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] $ROS2_MIRROR_URL $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null; \
     fi
@@ -100,7 +101,7 @@ RUN git config --global core.quotepath false
 # the `.config` directory will be created with root permission, and the user will not be able to write to it.
 RUN mkdir -p /home/$USERNAME/.config
 RUN mkdir -p /home/$USERNAME/.local
-COPY --chown=$USERNAME:$USERNAME copy_files/ros_rc/humble /home/$USERNAME/.local/ros_rc
+COPY --chown=$USERNAME:$USERNAME copy_files/ros2_rc/humble /home/$USERNAME/.local/ros2_rc
 
 ENTRYPOINT []
 CMD ["/bin/zsh"]

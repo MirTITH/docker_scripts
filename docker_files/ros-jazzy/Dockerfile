@@ -6,22 +6,22 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
 # Change Ubuntu source list
-COPY mirrors/ubuntu_24.04_ustc.sources /etc/apt/sources.list.d/ubuntu.sources
-# COPY mirrors/ubuntu_24.04_tuna.list /etc/apt/sources.list
-# COPY mirrors/ubuntu_24.04_osa.list /etc/apt/sources.list
+# COPY mirrors/ubuntu_24.04_ustc.sources /etc/apt/sources.list.d/ubuntu.sources
+COPY mirrors/ubuntu_24.04_osa.sources /etc/apt/sources.list.d/ubuntu.sources
 
 
 # Change ROS 2 source list
 # ROS 2 在 2025 年 6 月左右更换了软件源的签名，并改用 ros2-apt-source.deb 来配置源。
 # ros2-apt-source.deb 会创建 /etc/apt/sources.list.d/ros2.sources 文件，并在自身更新时自动更新软件源的配置，但默认情况下会使用官方源。
 # 如需使用镜像源，需要删除 ros2-apt-source.deb 包，并手动添加 ROS 2 的软件源。（测试过直接修改 /etc/apt/sources.list.d/ros2.sources 文件中的 URL会报错(2025-06-07)。可能镜像站暂不支持这种格式）
-ARG ROS2_MIRROR_URL=https://mirrors.ustc.edu.cn/ros2/ubuntu
+# ARG ROS2_MIRROR_URL=https://mirrors.ustc.edu.cn/ros2/ubuntu
 # ARG ROS2_MIRROR_URL=https://mirrors.tuna.tsinghua.edu.cn/ros2/ubuntu
-# ARG ROS2_MIRROR_URL=https://mirrors.osa.moe/ros2/ubuntu
+ARG ROS2_MIRROR_URL=https://mirrors.osa.moe/ros2/ubuntu
 
 # If ROS2_MIRROR_URL is set, replace the ROS 2 source URL
 RUN if [ -n "$ROS2_MIRROR_URL" ]; then \
     apt purge -y ros2-apt-source; \
+    if [ -f /etc/apt/sources.list.d/ros2-latest.list ]; then rm /etc/apt/sources.list.d/ros2-latest.list; fi; \
     curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg; \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] $ROS2_MIRROR_URL $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null; \
     fi
@@ -69,7 +69,7 @@ RUN git config --global core.quotepath false
 # the `.config` directory will be created with root permission, and the user will not be able to write to it.
 RUN mkdir -p /home/$USERNAME/.config
 RUN mkdir -p /home/$USERNAME/.local
-COPY --chown=$USERNAME:$USERNAME copy_files/ros_rc/jazzy /home/$USERNAME/.local/ros_rc
+COPY --chown=$USERNAME:$USERNAME copy_files/ros2_rc/jazzy /home/$USERNAME/.local/ros2_rc
 
 ENTRYPOINT []
 CMD ["/bin/zsh"]
