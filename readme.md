@@ -30,7 +30,7 @@
 ### 创建容器
 
 ```shell
-./create_container.py my-ros-humble my-project-name --rc-file common_rc -v ~/Documents/:Documents -v ~/Downloads/:Downloads --user-data /path/to/project
+./create_container.py my-ros-humble my-project-name -v ~/Documents/:Documents -v ~/Downloads/:Downloads
 ```
 
 ### 使用 VSCode 附加到容器
