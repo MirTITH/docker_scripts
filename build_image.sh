@@ -8,9 +8,9 @@ dockerfile_path=$script_dir/docker_files/ros.dockerfile
 UBUNTU_VERSION=""
 DOCKER_IMAGE_NAME=""
 
-DOCKER_BUILD_TARGET="ros2"
 
 # Docker 构建参数
+DOCKER_ARG_ROS_TARGET="ros2"
 DOCKER_ARG_LOCALE="C.UTF-8"
 DOCKER_ARG_TZ=""       # 如果为空则自动检测
 DOCKER_ARG_USERNAME="" # 如果为空则自动检测
@@ -32,7 +32,7 @@ print_usage() {
     echo "  docker_image_name      要构建的 Docker 镜像名称"
     echo ""
     echo "选项:"
-    echo "  --target TARGET                设置构建目标 (默认: ${DOCKER_BUILD_TARGET})"
+    echo "  --ros-target ROS_TARGET        设置 ros 构建目标 (默认: ${DOCKER_ARG_ROS_TARGET})"
     echo "  --locale LOCALE                设置语言环境 (默认: ${DOCKER_ARG_LOCALE})"
     echo "  --timezone TIMEZONE            设置时区 (默认: 自动检测, 例如: Asia/Shanghai)"
     echo "  --username USERNAME            设置用户名 (默认: 当前用户)"
@@ -118,8 +118,8 @@ positional_arg_count=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    --target)
-        DOCKER_BUILD_TARGET="$2"
+    --ros-target)
+        DOCKER_ARG_ROS_TARGET="$2"
         shift 2
         ;;
     --locale)
@@ -216,10 +216,11 @@ fi
 
 DOCKER_BUILD_EXTRA_ARGS=()
 
-case "${DOCKER_BUILD_TARGET}" in
+case "${DOCKER_ARG_ROS_TARGET}" in
 "ros2")
     ROS2_VERSION=$(get_ros2_version "$UBUNTU_VERSION")
     DOCKER_BUILD_EXTRA_ARGS+=(
+        --build-arg "ROS_TARGET=${DOCKER_ARG_ROS_TARGET}"
         --build-arg "ROS2_VERSION=${ROS2_VERSION}"
         --build-arg "ROS2_MIRROR_URL=${DOCKER_ARG_ROS2_MIRROR_URL}"
     )
@@ -227,12 +228,13 @@ case "${DOCKER_BUILD_TARGET}" in
 "ros1")
     ROS1_VERSION=$(get_ros1_version "$UBUNTU_VERSION")
     DOCKER_BUILD_EXTRA_ARGS+=(
+        --build-arg "ROS_TARGET=${DOCKER_ARG_ROS_TARGET}"
         --build-arg "ROS1_VERSION=${ROS1_VERSION}"
         --build-arg "ROS1_MIRROR_URL=${DOCKER_ARG_ROS1_MIRROR_URL}"
     )
     ;;
 *)
-    echo "Error: 不支持的 TARGET: ${DOCKER_BUILD_TARGET}"
+    echo "Error: 不支持的 TARGET: ${DOCKER_ARG_ROS_TARGET}"
     exit 1
     ;;
 esac
@@ -240,7 +242,7 @@ esac
 # Build the image
 DOCKER_ARGS=(
     build -f "$dockerfile_path" -t "$DOCKER_IMAGE_NAME" "$script_dir"
-    --target "$DOCKER_BUILD_TARGET"
+    --target final
     --build-arg "BASE_IMAGE=ubuntu:${UBUNTU_VERSION}"
     --build-arg "UBUNTU_MIRROR=${DOCKER_ARG_UBUNTU_MIRROR}"
     --build-arg "LOCALE=${DOCKER_ARG_LOCALE}"

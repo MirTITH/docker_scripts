@@ -11,11 +11,11 @@ ROS2_MIRROR_URL="http://mirrors.osa.moe/ros2/ubuntu"
 
 echo "-------------------------------------"
 echo "正在构建 20.04 + ROS1 Noetic 镜像..."
-"$build_image_sh" 20.04 ros1-noetic --target ros1 --ubuntu-mirror "$UBUNTU_MIRROR" --ros1-mirror "$ROS1_MIRROR_URL" --ros2-mirror "$ROS2_MIRROR_URL"
+"$build_image_sh" 20.04 ros1-noetic --ros-target ros1 --ubuntu-mirror "$UBUNTU_MIRROR" --ros1-mirror "$ROS1_MIRROR_URL" --ros2-mirror "$ROS2_MIRROR_URL"
 
 echo "-------------------------------------"
 echo "正在构建 18.04 + ROS1 Melodic 镜像..."
-"$build_image_sh" 18.04 ros1-melodic --target ros1 --ubuntu-mirror "$UBUNTU_MIRROR" --ros1-mirror "$ROS1_MIRROR_URL" --ros2-mirror "$ROS2_MIRROR_URL"
+"$build_image_sh" 18.04 ros1-melodic --ros-target ros1 --ubuntu-mirror "$UBUNTU_MIRROR" --ros1-mirror "$ROS1_MIRROR_URL" --ros2-mirror "$ROS2_MIRROR_URL"
 
 # echo "-------------------------------------"
 # echo "正在构建 20.04 + ROS2 Foxy 镜像..."

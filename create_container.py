@@ -369,14 +369,14 @@ class DockerCmdGenerator:
 def main():
     parser = argparse.ArgumentParser(
         description="Create a container",
-        epilog=f"Example:\n  {sys.argv[0]} my-ros-humble my-project-name -v ~/Documents/:Documents -v ~/Downloads/:Downloads",
+        epilog=f"Example:\n  {sys.argv[0]} ros2-humble my-project-name -v ~/Documents/:Documents -v ~/Downloads/:Downloads",
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
     default_rc_file = os.path.join(script_dir, "mount/common_rc")
     default_clangd_path = os.path.join(script_dir, "mount/clangd")
-    default_dotfiles_path = "./dotfiles"
+    default_dotfiles_path = ""
 
     parser.add_argument("image-name", help="The name of the image to create the container from")
     parser.add_argument("container-name", help="The name of the container to create")

@@ -6,7 +6,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
+export PATH=$HOME/.local/bin:$PATH
 
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -88,6 +88,8 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
+[[ ! -f ~/.local/common_rc ]] || source ~/.local/common_rc
+[[ ! -f ~/.local/ros2_rc ]] || source ~/.local/ros2_rc
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
@@ -115,8 +117,6 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-source /opt/nros_tools/nros_rc
-alias proxy-on="nros-set-http-proxy http://nros:nrospasswd@gmk.tith.ip-ddns.com:7890"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

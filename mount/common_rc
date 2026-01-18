@@ -1,30 +1,68 @@
-proxy_on() {
-    proxy_clash
+alias proxy-on="nros-set-http-proxy http://localhost:7890"
+
+nros-proxy-on() {
+    echo "服务器暂未配置代理软件，但你可以使用 nros-set-http-proxy 连接自己的代理服务器。"
+    echo "输入 nros-set-http-proxy 获取帮助。"
 }
 
-proxy_clash() {
-    export http_proxy=http://localhost:7890
-    export https_proxy=http://localhost:7890
-    export all_proxy=socks5://localhost:7890
-}
-
-proxy_v2ray() {
-    export http_proxy=http://localhost:1081
-    export https_proxy=http://localhost:1081
-    export all_proxy=socks5://localhost:1080
-}
-
-proxy_off() {
+nros-proxy-off() {
     unset http_proxy
     unset https_proxy
+    unset ftp_proxy
     unset all_proxy
+    unset no_proxy
+    unset NO_PROXY
 }
 
-proxy_info() {
+nros-proxy-info() {
     echo -e "http_proxy=${http_proxy}"
     echo -e "https_proxy=${https_proxy}"
+    echo -e "ftp_proxy=${ftp_proxy}"
     echo -e "all_proxy=${all_proxy}"
+    echo -e "no_proxy=${no_proxy}"
+    echo -e "NO_PROXY=${NO_PROXY}"
+    echo "IP 信息："
     curl ipinfo.io
+    echo 
+}
+
+nros-set-http-proxy() {
+    if [ $# -ne 1 ]; then
+        echo "设置 HTTP 代理环境变量。使用方法：nros-set-http-proxy http://[<user>:<password>@]<host>:<port>"
+        echo ""
+        echo "示例: "
+        echo "  nros-set-http-proxy http://10.249.xxx.xxx:7890"
+        echo "  nros-set-http-proxy http://user:pass@10.249.xxx.xxx:7890"
+        echo "其中 <host> 和 <port> 为代理软件所在主机的地址和端口"
+        echo ""
+        echo "注意："
+        echo "  1. 可能需要在代理软件上允许局域网连接"
+        echo "  2. Windows 系统可能需要添加防火墙入站规则，允许代理端口的 TCP 流量"
+        echo "  3. 建议添加用户验证或使用不常用的端口以防他人滥用"
+    else
+        # http
+        export http_proxy=$1
+        export https_proxy=$1
+        export ftp_proxy=$1
+
+        nros-set-no-proxy
+    fi
+}
+
+nros-set-socks5-proxy() {
+    if [ $# -ne 1 ]; then
+        echo "Example: set_socks5_proxy socks5://<host>:<port>"
+    else
+        # socks5 部分软件不兼容
+        export all_proxy=$1
+
+        nros-set-no-proxy
+    fi
+}
+
+nros-set-no-proxy() {
+    export no_proxy="localhost,127.0.0.1,::1,10.0.0.0/8,192.168.0.0/16,mirrors.osa.moe,.osa.moe,.tith.ip-ddns.com,.internal,.local"
+    export NO_PROXY=${no_proxy}
 }
 
 hf_endpoint() {

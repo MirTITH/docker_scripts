@@ -7,6 +7,30 @@ INSTALL_GAZEBO=false
 INSTALL_COLCON_MIXIN=false
 ROSDEP_UPDATE=false
 
+# 重试函数,最多尝试5次
+retry_command() {
+  local max_attempts=5
+  local attempt=1
+  local command="$@"
+  
+  while [ $attempt -le $max_attempts ]; do
+    echo "尝试执行命令 (第 $attempt 次): $command"
+    if eval "$command"; then
+      echo "命令执行成功"
+      return 0
+    else
+      echo "命令执行失败,准备重试..."
+      attempt=$((attempt + 1))
+      if [ $attempt -le $max_attempts ]; then
+        sleep 2
+      fi
+    fi
+  done
+  
+  echo "命令执行失败,已达到最大重试次数 ($max_attempts)"
+  return 1
+}
+
 print_usage() {
   echo "Usage: $0 --ros2-version ROS2_VERSION [--mirror ROS2_MIRROR_URL] [--install-gazebo true|false] [--install-colcon-mixin true|false] [--rosdep-update true|false]"
   echo ""
@@ -67,7 +91,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get update
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common curl
 sudo add-apt-repository universe
 sudo DEBIAN_FRONTEND=noninteractive apt-get update
-sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+retry_command sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] ${ROS2_MIRROR_URL} $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/ros2.list >/dev/null
 sudo DEBIAN_FRONTEND=noninteractive apt-get update
 sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
@@ -81,12 +105,12 @@ if [ "$INSTALL_COLCON_MIXIN" = true ]; then
   # colcon mixin
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-colcon-common-extensions python3-colcon-mixin
   colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
-  colcon mixin update default
+  retry_command colcon mixin update default
 fi
 
 if [ "$ROSDEP_UPDATE" = true ]; then
   sudo rosdep init
-  rosdep update
+  retry_command rosdep update
 fi
 
 sudo rm -rf /var/lib/apt/lists/*
