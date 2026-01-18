@@ -1,0 +1,6 @@
+{
+    "fontFamily": "'MesloLGS NF', 'Noto Sans Mono', 'monospace', 'Microsoft YaHei UI'",
+    "theme": "dark",
+    "scrollback": 100000,
+
+}

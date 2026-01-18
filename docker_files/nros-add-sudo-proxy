@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 获取发行版 ID，例如：ubuntu
+distro_id=$(grep '^ID=' /etc/os-release | cut -d '=' -f 2)
+
+# 判断是否为 ubuntu
+if [ "$distro_id" != "ubuntu" ]; then
+  echo "Error: This script only supports Ubuntu. Current distro: $distro_id"
+  exit 1
+fi
+
+# 获取 VERSION_ID，例如 "24.04"
+ver=$(grep '^VERSION_ID=' /etc/os-release | cut -d '"' -f 2)
+# 去掉小数点 => "24.04" -> "2404"
+ver_clean=${ver//./}
+
+# 22.04 及以上版本支持通配符
+if [ "$ver_clean" -ge 2204 ]; then
+  cat <<'EOF' >>/etc/sudoers.d/05_proxy
+Defaults env_keep += "*_proxy *_PROXY"
+EOF
+else
+  cat <<'EOF' >>/etc/sudoers.d/05_proxy
+Defaults env_keep += "http_proxy https_proxy ftp_proxy rsync_proxy all_proxy no_proxy HTTP_PROXY HTTPS_PROXY FTP_PROXY RSYNC_PROXY ALL_PROXY NO_PROXY"
+EOF
+fi
+
+chmod 440 /etc/sudoers.d/05_proxy

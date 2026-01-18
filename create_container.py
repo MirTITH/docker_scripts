@@ -42,21 +42,32 @@ class DockerCmdGenerator:
         self.image_name: str = getattr(args, "image-name")
         self.container_name: str = getattr(args, "container-name")
         self.container_user_name: str = getattr(args, "user_name")
-        self.user_data_dir: str = self.__get_arg_abs_path(getattr(args, "user_data", None), path_type="dir", create_if_not_exist=True)
+        # self.user_data_dir: str = self.__get_arg_abs_path(getattr(args, "user_data", None), path_type="dir", create_if_not_exist=True)
         self.no_nv: bool = getattr(args, "no_nv", False)
 
-        self.rc_file: str = self.__get_arg_abs_path(getattr(args, "rc_file", None), path_type="file", create_if_not_exist=True)
+        self.rc_file: Optional[str] = self.__get_arg_abs_path(getattr(args, "rc_file", None), path_type="file", create_if_not_exist=True)
 
         self.volumes: List[str] = getattr(args, "volume")
         if not self.volumes:
             self.volumes = []
 
-        self.clangd_path: str = self.__get_arg_abs_path(getattr(args, "clangd_path", None), path_type="dir", create_if_not_exist=False)
+        self.clangd_path: Optional[str] = self.__get_arg_abs_path(getattr(args, "clangd_path", None), path_type="dir", create_if_not_exist=False)
+
+        self.dotfiles_path: Optional[str] = self.__get_arg_abs_path(getattr(args, "dotfiles", None), path_type="dir", create_if_not_exist=False)
+
+        # Resolve default user from image when --user-name is empty
+        self.use_image_default_user = False
+        if not self.container_user_name:
+            self.container_user_name = self.__get_image_default_user(self.image_name)
+            self.use_image_default_user = True
 
         # -d: Run the container in the background
         # --name: Name of the container
-        # --user: User to run the container as
-        self.cmd_prefix = ["docker", "run", "-d", "--name", self.container_name, "--user", self.container_user_name]
+        # --user: User to run the container as (omit to use image default)
+        if self.use_image_default_user:
+            self.cmd_prefix = ["docker", "run", "-d", "--name", self.container_name]
+        else:
+            self.cmd_prefix = ["docker", "run", "-d", "--name", self.container_name, "--user", self.container_user_name]
         self.cmd_postfix = [self.image_name, "sleep", "infinity"]
 
         no_privileged = getattr(args, "no_privileged", False)
@@ -65,14 +76,15 @@ class DockerCmdGenerator:
         print(f"Image name: {BLUE}{self.image_name}{RESET}")
         print(f"Container name: {BLUE}{self.container_name}{RESET}")
         print(f"Container user name: {BLUE}{self.container_user_name}{RESET}")
-        print(f"User data directory: {BLUE}{self.user_data_dir}{RESET}")
+        # print(f"User data directory: {BLUE}{self.user_data_dir}{RESET}")
         print(f"Do not enable NVIDIA GPU: {BLUE}{self.no_nv}{RESET}")
         print(f"RC file: {BLUE}{self.rc_file}{RESET}")
         print(f"Volumes: {BLUE}{self.volumes}{RESET}")
         print(f"Clangd path: {BLUE}{self.clangd_path}{RESET}")
+        print(f"Dotfiles path: {BLUE}{self.dotfiles_path}{RESET}")
         print()
 
-    def __get_arg_abs_path(self, path: str, path_type: str = "", create_if_not_exist=False) -> Optional[str]:
+    def __get_arg_abs_path(self, path: Optional[str], path_type: str = "", create_if_not_exist=False) -> Optional[str]:
         if path == "":
             return None
 
@@ -118,7 +130,13 @@ class DockerCmdGenerator:
             if result.returncode != 0:
                 print("Failed to create container")
                 sys.exit(1)
-            print("Done.\n\nYou can attach to the container using vscode or by running one of the following command:")
+            print("Container created successfully.")
+            
+            # Install dotfiles if provided
+            if self.dotfiles_path:
+                self.__install_dotfiles()
+            
+            print("\nDone.\n\nYou can attach to the container using vscode or by running one of the following command:")
             print(f"    docker exec -it {self.container_name} bash")
             print(f"    docker exec -it {self.container_name} zsh\n")
             print("To remove the container, run the following command:")
@@ -127,10 +145,71 @@ class DockerCmdGenerator:
             print("Aborted")
 
     def __get_home_dir(self, user_name):
-        if user_name == "root":
+        if user_name in ["root", "0"]:
             return "/root"
         else:
             return f"/home/{user_name}"
+
+    def __get_image_default_user(self, image_name: str) -> str:
+        try:
+            result = subprocess.run(
+                ["docker", "image", "inspect", "--format", "{{.Config.User}}", image_name],
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError:
+            raise RuntimeError("docker not found. Please install Docker or ensure it is in PATH.")
+
+        if result.returncode != 0:
+            error_message = result.stderr.strip() or "unknown error"
+            raise RuntimeError(f"failed to inspect image '{image_name}': {error_message}")
+
+        user = result.stdout.strip()
+        if not user:
+            return "root"
+
+        if ":" in user:
+            user = user.split(":", 1)[0] or "root"
+
+        return user
+
+    def __install_dotfiles(self):
+        """Copy dotfiles to container and run install.sh"""
+        if not self.dotfiles_path:
+            return
+        
+        print(f"\n{GREEN}Installing dotfiles from {self.dotfiles_path}...{RESET}")
+        
+        # Create a temporary directory in the container
+        temp_dir = "/tmp/dotfiles_install"
+        
+        # Copy dotfiles to container
+        print(f"Copying dotfiles to container...")
+        copy_cmd = ["docker", "cp", self.dotfiles_path, f"{self.container_name}:{temp_dir}"]
+        result = subprocess.run(copy_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"{RED}Failed to copy dotfiles to container: {result.stderr}{RESET}")
+            return
+        
+        # Check if install.sh exists
+        check_cmd = ["docker", "exec", self.container_name, "test", "-f", f"{temp_dir}/install.sh"]
+        result = subprocess.run(check_cmd, capture_output=True)
+        if result.returncode != 0:
+            print(f"{YELLOW}Warning: install.sh not found in {self.dotfiles_path}, skipping installation.{RESET}")
+        else:
+            # Run install.sh
+            print(f"Running install.sh...")
+            install_cmd = ["docker", "exec", self.container_name, "bash", "-c", f"cd {temp_dir} && bash install.sh"]
+            result = subprocess.run(install_cmd)
+            if result.returncode != 0:
+                print(f"{RED}Warning: install.sh exited with code {result.returncode}{RESET}")
+            else:
+                print(f"{GREEN}Dotfiles installed successfully.{RESET}")
+        
+        # Clean up temporary directory
+        print(f"Cleaning up temporary directory...")
+        cleanup_cmd = ["docker", "exec", self.container_name, "rm", "-rf", temp_dir]
+        subprocess.run(cleanup_cmd, capture_output=True)
 
     def __to_host_abs_path(self, path):
         return os.path.abspath(os.path.expanduser(path))
@@ -217,7 +296,18 @@ class DockerCmdGenerator:
 
         cmd_args = []
 
-        cmd_args.extend(["--network=host", "--ipc=host"])  # Enable host networking
+        cmd_args.extend(
+            [
+                "--init",  # Use the Docker init process to handle reaping zombies and forwarding signals
+                "--network=host",  # Enable host networking
+                "--ipc=host",  # 使用 host 的 IPC 命名空间，以便容器内的进程可以使用共享内存（避免 /dev/shm 空间不足的问题）
+            ]
+        )
+
+        cmd_args.extend(["--ulimit", "memlock=-1"])  # Disable memory lock limit
+        cmd_args.extend(["--ulimit", "stack=67108864"])  # Increase stack size limit
+        cmd_args.extend(["--ulimit", "nofile=1048576:1048576"])  # Increase open file limit
+
         if self.privileged:
             cmd_args.extend(["--privileged"])  # Allow access to all devices
 
@@ -263,8 +353,8 @@ class DockerCmdGenerator:
             cmd_args.extend(self.__get_mount_args(f"{self.rc_file}", f"{CONTAINER_HOME}/.local/common_rc", "file"))
 
         # Mount user data directory
-        if self.user_data_dir:
-            cmd_args.extend(self.__get_mount_args(self.user_data_dir, f"{CONTAINER_HOME}/user_data", "dir"))
+        # if self.user_data_dir:
+        #     cmd_args.extend(self.__get_mount_args(self.user_data_dir, f"{CONTAINER_HOME}/user_data", "dir"))
 
         # Mount volumes
         cmd_args.extend(self.__get_volumes_mount_args())
@@ -279,13 +369,14 @@ class DockerCmdGenerator:
 def main():
     parser = argparse.ArgumentParser(
         description="Create a container",
-        epilog=f"Example:\n  {sys.argv[0]} my-ros-humble my-project-name -v ~/Documents/:Documents -v ~/Downloads/:Downloads --user-data /path/to/project",
+        epilog=f"Example:\n  {sys.argv[0]} my-ros-humble my-project-name -v ~/Documents/:Documents -v ~/Downloads/:Downloads",
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
     default_rc_file = os.path.join(script_dir, "mount/common_rc")
     default_clangd_path = os.path.join(script_dir, "mount/clangd")
+    default_dotfiles_path = "./dotfiles"
 
     parser.add_argument("image-name", help="The name of the image to create the container from")
     parser.add_argument("container-name", help="The name of the container to create")
@@ -294,8 +385,8 @@ def main():
         help=f'The rc file to source in the container, which will be mounted to /home/<user_name>/.local/common_rc.\nThe default value is {BLUE}{default_rc_file}{RESET}. Give "" to not mount any rc file.',
         default=default_rc_file,
     )
-    parser.add_argument("--user-name", help="The user to run the container as.", default="ubuntu")
-    parser.add_argument("--user-data", help="The directory to store user data. It will be mounted to /home/<user_name>/user_data")
+    parser.add_argument("--user-name", help="The user to run the container as. Leave empty to use default user in the image", default="")
+    # parser.add_argument("--user-data", help="The directory to store user data. It will be mounted to /home/<user_name>/user_data")
     parser.add_argument("--no-nv", help="Do not enable NVIDIA GPU", action="store_true")
     parser.add_argument("--volume", "-v", help="Mount a volume from the host to the container", action="append")
     parser.add_argument(
@@ -303,13 +394,13 @@ def main():
         help=f'Path to clangd. The default value is {BLUE}{default_clangd_path}{RESET}. Give "" to not mount clangd.',
         default=default_clangd_path,
     )
+    parser.add_argument(
+        "--dotfiles",
+        help=f'Path to dotfiles directory. After container creation, this directory will be copied to a temp location in the container, install.sh will be executed, and then the temp directory will be removed. The default value is {BLUE}{default_dotfiles_path}{RESET}. Give "" to skip dotfiles installation.',
+        default=default_dotfiles_path,
+    )
     parser.add_argument("--no-privileged", action="store_true")
     args = parser.parse_args()
-
-    # # Print arguments
-    # print("Arguments:")
-    # for arg in vars(args):
-    #     print(f"    {arg}: {getattr(args, arg)}")
 
     docker_cmd_generator = DockerCmdGenerator(args)
     docker_cmd_generator.run_cmd()

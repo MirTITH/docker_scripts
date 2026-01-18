@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+MIRRORS=(
+    http://mirrors.osa.moe/ubuntu
+    http://mirrors.ustc.edu.cn/ubuntu
+    http://mirrors.huaweicloud.com/ubuntu
+    http://mirrors.tuna.tsinghua.edu.cn/ubuntu
+    http://mirrors.aliyun.com/ubuntu
+    http://archive.ubuntu.com/ubuntu
+)
+
+MIRROR_NAMES=(
+    "哈深校内源"
+    "中科大"
+    "华为云"
+    "清华大学"
+    "阿里云"
+    "官方源"
+)
+
+if [ "$(id -u)" -eq 0 ]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
+MIRROR=""
+NO_UPDATE=false
+
+print_usage() {
+    echo "用法： $0 [镜像源URL] [-n|--no-update]"
+    echo "参数："
+    echo "  镜像源URL        指定要使用的镜像源URL地址"
+    echo "  -n, --no-update  不在换源后自动运行 apt update"
+    echo "示例："
+    echo "交互式选择镜像源：  $0"
+    echo "直接指定镜像源：    $0 ${MIRRORS[0]}"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -n | --no-update)
+        NO_UPDATE=true
+        shift
+        ;;
+    -*)
+        echo "未知选项: $1"
+        print_usage
+        exit 1
+        ;;
+    http://* | https://*)
+        MIRROR="$1"
+        shift
+        ;;
+    *)
+        echo "未知参数: $1"
+        print_usage
+        exit 1
+        ;;
+    esac
+done
+
+. /etc/os-release # 获取 UBUNTU_CODENAME 等信息
+
+# 传统的 sources.list 格式（ubuntu 22.04 及更早版本）
+gen_sources_list() {
+    URL=$1/
+    tee <<EOF
+# 默认注释了源码仓库，如有需要可自行取消注释
+deb $URL $UBUNTU_CODENAME main restricted universe multiverse
+# deb-src $URL $UBUNTU_CODENAME main restricted universe multiverse
+
+deb $URL $UBUNTU_CODENAME-security main restricted universe multiverse
+# deb-src $URL $UBUNTU_CODENAME-security main restricted universe multiverse
+
+deb $URL $UBUNTU_CODENAME-updates main restricted universe multiverse
+# deb-src $URL $UBUNTU_CODENAME-updates main restricted universe multiverse
+
+deb $URL $UBUNTU_CODENAME-backports main restricted universe multiverse
+# deb-src $URL $UBUNTU_CODENAME-backports main restricted universe multiverse
+
+# 预发布软件源，不建议启用
+# deb $URL $UBUNTU_CODENAME-proposed main restricted universe multiverse
+# deb-src $URL $UBUNTU_CODENAME-proposed main restricted universe multiverse
+EOF
+}
+
+# DEB822 格式（ubuntu 24.04 及更新版本）
+gen_ubuntu_sources() {
+    URL=$1
+    tee <<EOF
+Types: deb
+URIs: ${URL}
+Suites: ${UBUNTU_CODENAME} ${UBUNTU_CODENAME}-updates ${UBUNTU_CODENAME}-backports
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: ${URL}
+Suites: ${UBUNTU_CODENAME}-security
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
+}
+
+if [[ -z "$MIRROR" ]]; then
+    print_usage
+    echo "请从下面的列表中选择一个源："
+
+    for i in "${!MIRRORS[@]}"; do
+        printf "%d) %s\t %s\n" $((i + 1)) "${MIRROR_NAMES[$i]}" "${MIRRORS[$i]}"
+    done
+
+    read -p "请输入序号 [1-${#MIRRORS[@]}]: " choice
+
+    # 转为数组下标
+    idx=$((choice - 1))
+
+    if [[ $idx -lt 0 || $idx -ge ${#MIRRORS[@]} ]]; then
+        echo "无效选择，退出。"
+        exit 1
+    fi
+
+    MIRROR="${MIRRORS[$idx]}"
+fi
+
+echo "将使用镜像源：${MIRROR}"
+
+# 判断格式
+# 如果存在 /etc/apt/sources.list.d/ubuntu.sources 则说明是使用了 DEB822 的格式
+if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+    # 使用 DEB822 格式
+    CONTENT=$(gen_ubuntu_sources ${MIRROR})
+    SOURCE_FILE="/etc/apt/sources.list.d/ubuntu.sources"
+else
+    # 传统的 sources.list 格式
+    CONTENT=$(gen_sources_list ${MIRROR})
+    SOURCE_FILE="/etc/apt/sources.list"
+fi
+
+$SUDO tee "${SOURCE_FILE}" >/dev/null <<EOF
+${CONTENT}
+EOF
+
+# 更新软件源
+[[ "$NO_UPDATE" = false ]] && $SUDO apt update
+
+echo "换源完成！"

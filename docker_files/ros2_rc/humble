@@ -21,7 +21,7 @@ __ros2_rc_source_system_ros2() {
     alias rosdep_install='rosdep install --from-paths src --ignore-src -r -y'
 
     if [ -n "$ROS2_RC_ROS_DOMAIN_ID" ]; then
-    echo "Setting ROS_DOMAIN_ID to $ROS2_RC_ROS_DOMAIN_ID"
+        echo "Setting ROS_DOMAIN_ID to $ROS2_RC_ROS_DOMAIN_ID"
         export ROS_DOMAIN_ID=$ROS2_RC_ROS_DOMAIN_ID
     fi
 

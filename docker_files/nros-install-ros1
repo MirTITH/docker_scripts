@@ -1,0 +1,83 @@
+#!/bin/bash
+set -euo pipefail
+
+ROS1_VERSION=""
+ROS1_MIRROR_URL="http://mirrors.ustc.edu.cn/ros/ubuntu"
+INSTALL_GAZEBO=false
+ROSDEP_UPDATE=false
+
+print_usage() {
+  echo "Usage: $0 --ros1-version ROS1_VERSION [--mirror ROS1_MIRROR_URL] [--install-gazebo true|false] [--install-colcon-mixin true|false] [--rosdep-update true|false]"
+  echo ""
+  echo "Options:"
+  echo "  --ros1-version ROS1_VERSION    Specify the ROS 1 version (e.g., melodic, noetic)"
+  echo "  --mirror ROS1_MIRROR_URL        Specify the ROS 1 mirror URL (default: ${ROS1_MIRROR_URL})"
+  echo "  --install-gazebo true|false     Whether to install Gazebo packages (default: ${INSTALL_GAZEBO})"
+  echo "  --install-colcon-mixin true|false Whether to install colcon mixin (default: ${INSTALL_COLCON_MIXIN})"
+  echo "  --rosdep-update true|false      Whether to run rosdep update after installation (default: ${ROSDEP_UPDATE})"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --ros1-version)
+    ROS1_VERSION="$2"
+    shift 2
+    ;;
+  --mirror)
+    ROS1_MIRROR_URL="$2"
+    shift 2
+    ;;
+  --install-gazebo)
+    INSTALL_GAZEBO="$2"
+    shift 2
+    ;;
+  --rosdep-update)
+    ROSDEP_UPDATE="$2"
+    shift 2
+    ;;
+  --help | -h)
+    print_usage
+    exit 0
+    ;;
+  -*)
+    echo "未知选项: $1"
+    print_usage
+    exit 1
+    ;;
+  *)
+    echo "未知参数: $1"
+    print_usage
+    exit 1
+    ;;
+  esac
+done
+
+if [ -z "${ROS1_VERSION}" ]; then
+  echo "错误: 必须指定 ROS 1 版本"
+  print_usage
+  exit 1
+fi
+
+gpg --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+gpg --export C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654 | sudo tee /usr/share/keyrings/ros.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/ros.gpg] ${ROS1_MIRROR_URL} $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/ros-latest.list
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ros-${ROS1_VERSION}-desktop-full
+
+# Dependencies for building packages
+if [ "$ROS1_VERSION" = "noetic" ]; then
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
+else
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential
+fi
+
+if [ "$INSTALL_GAZEBO" = true ]; then
+  sudo apt-get install -y ros-${ROS1_VERSION}-gazebo-ros-pkgs
+fi
+
+if [ "${ROSDEP_UPDATE}" = true ]; then
+  sudo rosdep init || true
+  sudo rosdep update
+fi
+
+sudo rm -rf /var/lib/apt/lists/*
