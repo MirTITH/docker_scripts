@@ -1,9 +1,7 @@
+#!/bin/bash
+
 alias proxy-on="nros-set-http-proxy http://localhost:7890"
 
-nros-proxy-on() {
-    echo "服务器暂未配置代理软件，但你可以使用 nros-set-http-proxy 连接自己的代理服务器。"
-    echo "输入 nros-set-http-proxy 获取帮助。"
-}
 
 nros-proxy-off() {
     unset http_proxy
@@ -11,6 +9,11 @@ nros-proxy-off() {
     unset ftp_proxy
     unset all_proxy
     unset no_proxy
+
+    unset HTTP_PROXY
+    unset HTTPS_PROXY
+    unset FTP_PROXY
+    unset ALL_PROXY
     unset NO_PROXY
 }
 
@@ -20,6 +23,10 @@ nros-proxy-info() {
     echo -e "ftp_proxy=${ftp_proxy}"
     echo -e "all_proxy=${all_proxy}"
     echo -e "no_proxy=${no_proxy}"
+    echo -e "HTTP_PROXY=${HTTP_PROXY}"
+    echo -e "HTTPS_PROXY=${HTTPS_PROXY}"
+    echo -e "FTP_PROXY=${FTP_PROXY}"
+    echo -e "ALL_PROXY=${ALL_PROXY}"
     echo -e "NO_PROXY=${NO_PROXY}"
     echo "IP 信息："
     curl ipinfo.io
@@ -28,22 +35,35 @@ nros-proxy-info() {
 
 nros-set-http-proxy() {
     if [ $# -ne 1 ]; then
-        echo "设置 HTTP 代理环境变量。使用方法：nros-set-http-proxy http://[<user>:<password>@]<host>:<port>"
+        echo "设置 HTTP 代理环境变量。可以使用自己的梯子为当前终端提供网络代理。"
+        echo "用法：nros-set-http-proxy http://[<user>:<password>@]<host>:<port>"
+        echo "其中："
+        echo "  - user:password@   （可选）代理服务器的用户名和密码验证"
+        echo "  - <host> 和 <port> 为代理服务器的主机和端口"
         echo ""
-        echo "示例: "
-        echo "  nros-set-http-proxy http://10.249.xxx.xxx:7890"
-        echo "  nros-set-http-proxy http://user:pass@10.249.xxx.xxx:7890"
-        echo "其中 <host> 和 <port> 为代理软件所在主机的地址和端口"
+        echo "例如，在自己的电脑（IP 为 10.x.x.x）上开了 Clash，端口为 7890，则使用："
+        echo "  nros-set-http-proxy http://10.x.x.x:7890"
+        echo ""
+        echo "如果代理需要用户名和密码验证，则使用："
+        echo "  nros-set-http-proxy http://user:pass@10.x.x.x:7890"
+        echo ""
+        echo "提示：可以使用 nros-proxy-info 确认是否生效。"
         echo ""
         echo "注意："
         echo "  1. 可能需要在代理软件上允许局域网连接"
         echo "  2. Windows 系统可能需要添加防火墙入站规则，允许代理端口的 TCP 流量"
         echo "  3. 建议添加用户验证或使用不常用的端口以防他人滥用"
     else
-        # http
+        nros-proxy-off
+
         export http_proxy=$1
         export https_proxy=$1
         export ftp_proxy=$1
+        export all_proxy=$1
+        export HTTP_PROXY=$1
+        export HTTPS_PROXY=$1
+        export FTP_PROXY=$1
+        export ALL_PROXY=$1
 
         nros-set-no-proxy
     fi
@@ -51,33 +71,63 @@ nros-set-http-proxy() {
 
 nros-set-socks5-proxy() {
     if [ $# -ne 1 ]; then
-        echo "Example: set_socks5_proxy socks5://<host>:<port>"
+        echo "设置 SOCKS5 代理环境变量。可以使用自己的梯子为当前终端提供网络代理。"
+        echo "用法：nros-set-socks5-proxy socks5h://[<user>:<password>@]<host>:<port>"
+        echo "其中："
+        echo "  - socks5h://       表示使用 SOCKS5 代理，并且让代理服务器解析域名（推荐）"
+        echo "  - socks5://        表示使用 SOCKS5 代理，但由本地解析域名"
+        echo "  - user:password@   （可选）代理服务器的用户名和密码验证"
+        echo "  - <host> 和 <port> 为代理服务器的主机和端口"
+        echo ""
+        echo "例如，在自己的电脑（IP 为 10.x.x.x）上开了 Clash，端口为 7890，则使用："
+        echo "  nros-set-socks5-proxy socks5h://10.x.x.x:7890"
+        echo ""
+        echo "如果代理需要用户名和密码验证，则使用："
+        echo "  nros-set-socks5-proxy socks5h://user:pass@10.x.x.x:7890"
+        echo ""
+        echo "提示：可以使用 nros-proxy-info 确认是否生效。"
+        echo ""
+        echo "注意："
+        echo "  1. 可能需要在代理软件上允许局域网连接"
+        echo "  2. Windows 系统可能需要添加防火墙入站规则，允许代理端口的 TCP 流量"
+        echo "  3. 建议添加用户验证或使用不常用的端口以防他人滥用"
     else
-        # socks5 部分软件不兼容
+        nros-proxy-off
+
+        export http_proxy=$1
+        export https_proxy=$1
+        export ftp_proxy=$1
         export all_proxy=$1
+        export HTTP_PROXY=$1
+        export HTTPS_PROXY=$1
+        export FTP_PROXY=$1
+        export ALL_PROXY=$1
 
         nros-set-no-proxy
     fi
 }
 
 nros-set-no-proxy() {
-    export no_proxy="localhost,127.0.0.1,::1,10.0.0.0/8,192.168.0.0/16,mirrors.osa.moe,.osa.moe,.tith.ip-ddns.com,.internal,.local"
+    export no_proxy="localhost,127.0.0.1,::1,10.0.0.0/8,192.168.0.0/16,mirrors.osa.moe,.osa.moe,nros-server.tith.ip-ddns.com,.tith.ip-ddns.com,.tith.top,.internal,.local"
     export NO_PROXY=${no_proxy}
 }
 
-hf_endpoint() {
-    if [ -z "$1" ]; then
-        export HF_ENDPOINT="https://hf-mirror.com"
-        echo "HF_ENDPOINT is set to $HF_ENDPOINT"
-    elif [ "$1" = "on" ]; then
-        export HF_ENDPOINT="https://hf-mirror.com"
-        echo "HF_ENDPOINT is set to $HF_ENDPOINT"
-    elif [ "$1" = "off" ]; then
-        unset HF_ENDPOINT
-        echo "HF_ENDPOINT is unset"
-    else
-        echo "Usage: hf_endpoint [on|off]"
-    fi
+
+nros-hf-endpoint() {
+    case "$1" in
+        ""|"on")
+            export HF_ENDPOINT="https://hf-mirror.com"
+            echo "HF_ENDPOINT set to $HF_ENDPOINT （已开启 Hugging Face 镜像源）"
+            echo "提示：使用 nros-hf-endpoint off 可以关闭镜像源"
+            ;;
+        "off")
+            unset HF_ENDPOINT
+            echo "HF_ENDPOINT unset"
+            ;;
+        *)
+            echo "配置 Hugging Face 镜像源。用法：nros-hf-endpoint [on|off]"
+            ;;
+    esac
 }
 
 findsilent() {

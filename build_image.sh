@@ -32,7 +32,7 @@ print_usage() {
     echo "  docker_image_name      要构建的 Docker 镜像名称"
     echo ""
     echo "选项:"
-    echo "  --ros-target ROS_TARGET        设置 ros 构建目标 (默认: ${DOCKER_ARG_ROS_TARGET})"
+    echo "  --ros-target ROS_TARGET        设置 ros 构建目标 (可选 ros1 或 ros2，默认: ${DOCKER_ARG_ROS_TARGET})"
     echo "  --locale LOCALE                设置语言环境 (默认: ${DOCKER_ARG_LOCALE})"
     echo "  --timezone TIMEZONE            设置时区 (默认: 自动检测, 例如: Asia/Shanghai)"
     echo "  --username USERNAME            设置用户名 (默认: 当前用户)"
