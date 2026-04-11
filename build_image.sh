@@ -3,14 +3,14 @@ set -euo pipefail
 
 script_path=$(readlink -f "$0")      # 脚本文件的绝对路径
 script_dir=$(dirname "$script_path") # 脚本文件的目录
-dockerfile_path=$script_dir/docker_files/ros.dockerfile
+dockerfile_path=$script_dir/docker_files/ubuntu.dockerfile
 
 UBUNTU_VERSION=""
 DOCKER_IMAGE_NAME=""
 
 
 # Docker 构建参数
-DOCKER_ARG_ROS_TARGET="ros2"
+TARGET=""
 DOCKER_ARG_LOCALE="C.UTF-8"
 DOCKER_ARG_TZ=""       # 如果为空则自动检测
 DOCKER_ARG_USERNAME="" # 如果为空则自动检测
@@ -32,16 +32,16 @@ print_usage() {
     echo "  docker_image_name      要构建的 Docker 镜像名称"
     echo ""
     echo "选项:"
-    echo "  --ros-target ROS_TARGET        设置 ros 构建目标 (默认: ${DOCKER_ARG_ROS_TARGET})"
-    echo "  --locale LOCALE                设置语言环境 (默认: ${DOCKER_ARG_LOCALE})"
-    echo "  --timezone TIMEZONE            设置时区 (默认: 自动检测, 例如: Asia/Shanghai)"
-    echo "  --username USERNAME            设置用户名 (默认: 当前用户)"
-    echo "  --uid UID                      设置用户 ID (默认: 当前用户的 UID)"
-    echo "  --gid GID                      设置组 ID (默认: 当前用户的 GID)"
-    echo "  --ubuntu-mirror URL            设置 Ubuntu 镜像源 URL (默认: ${DOCKER_ARG_UBUNTU_MIRROR})"
-    echo "  --ros2-mirror URL              设置 ROS2 镜像源 URL (默认: ${DOCKER_ARG_ROS2_MIRROR_URL})"
-    echo "  --ros1-mirror URL              设置 ROS1 镜像源 URL (仅当构建 ROS1 目标时有效)"
-    echo "  --help, -h                     显示此帮助信息并退出"
+    echo "  --target TARGET        设置构建目标，例如：base, ros1, ros2，留空则使用 dockerfile 默认目标"
+    echo "  --locale LOCALE        设置语言环境 (默认: ${DOCKER_ARG_LOCALE})"
+    echo "  --timezone TIMEZONE    设置时区 (默认: 自动检测, 例如: Asia/Shanghai)"
+    echo "  --username USERNAME    设置用户名 (默认: 当前用户)"
+    echo "  --uid UID              设置用户 ID (默认: 当前用户的 UID)"
+    echo "  --gid GID              设置组 ID (默认: 当前用户的 GID)"
+    echo "  --ubuntu-mirror URL    设置 Ubuntu 镜像源 URL (默认: ${DOCKER_ARG_UBUNTU_MIRROR})"
+    echo "  --ros2-mirror URL      设置 ROS2 镜像源 URL (默认: ${DOCKER_ARG_ROS2_MIRROR_URL})"
+    echo "  --ros1-mirror URL      设置 ROS1 镜像源 URL (仅当构建 ROS1 目标时有效)"
+    echo "  --help, -h             显示此帮助信息并退出"
     echo ""
     echo "示例:"
     echo "  $0 22.04 my-ros2-image --locale zh_CN.UTF-8"
@@ -118,8 +118,8 @@ positional_arg_count=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    --ros-target)
-        DOCKER_ARG_ROS_TARGET="$2"
+    --target)
+        TARGET="$2"
         shift 2
         ;;
     --locale)
@@ -216,11 +216,10 @@ fi
 
 DOCKER_BUILD_EXTRA_ARGS=()
 
-case "${DOCKER_ARG_ROS_TARGET}" in
+case "${TARGET}" in
 "ros2")
     ROS2_VERSION=$(get_ros2_version "$UBUNTU_VERSION")
     DOCKER_BUILD_EXTRA_ARGS+=(
-        --build-arg "ROS_TARGET=${DOCKER_ARG_ROS_TARGET}"
         --build-arg "ROS2_VERSION=${ROS2_VERSION}"
         --build-arg "ROS2_MIRROR_URL=${DOCKER_ARG_ROS2_MIRROR_URL}"
     )
@@ -228,21 +227,19 @@ case "${DOCKER_ARG_ROS_TARGET}" in
 "ros1")
     ROS1_VERSION=$(get_ros1_version "$UBUNTU_VERSION")
     DOCKER_BUILD_EXTRA_ARGS+=(
-        --build-arg "ROS_TARGET=${DOCKER_ARG_ROS_TARGET}"
         --build-arg "ROS1_VERSION=${ROS1_VERSION}"
         --build-arg "ROS1_MIRROR_URL=${DOCKER_ARG_ROS1_MIRROR_URL}"
     )
     ;;
-*)
-    echo "Error: 不支持的 TARGET: ${DOCKER_ARG_ROS_TARGET}"
-    exit 1
-    ;;
 esac
+
+if [ -n "$TARGET" ]; then
+    DOCKER_BUILD_EXTRA_ARGS+=(--target "$TARGET")
+fi
 
 # Build the image
 DOCKER_ARGS=(
     build -f "$dockerfile_path" -t "$DOCKER_IMAGE_NAME" "$script_dir"
-    --target final
     --build-arg "BASE_IMAGE=ubuntu:${UBUNTU_VERSION}"
     --build-arg "UBUNTU_MIRROR=${DOCKER_ARG_UBUNTU_MIRROR}"
     --build-arg "LOCALE=${DOCKER_ARG_LOCALE}"

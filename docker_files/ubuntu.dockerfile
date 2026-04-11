@@ -1,5 +1,4 @@
 ARG BASE_IMAGE=ubuntu:22.04
-ARG ROS_TARGET=ros2
 
 #-------------------------------------------------------------
 # Base Image
@@ -62,9 +61,41 @@ RUN mkdir -p /home/$USERNAME/.config \
   && mkdir -p /home/$USERNAME/.local/bin \
   && mkdir -p /home/$USERNAME/.cache
 
+# zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
+  && git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k \
+  && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
+  && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
+  && git clone https://github.com/conda-incubator/conda-zsh-completion ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/conda-zsh-completion
+
+# Copy dotfiles
+COPY --chown=$USERNAME:$USERNAME docker_files/dotfiles/home/ /home/${USERNAME}/
+
+# 防止 git 输出中文路径时出现乱码
+# Remove docker-clean to enable auto-completion for apt
+RUN git config --global core.quotepath false \
+  && sudo rm /etc/apt/apt.conf.d/docker-clean || true
+
 ENTRYPOINT []
 CMD ["/bin/zsh"]
 
+#-------------------------------------------------------------
+# ROS 1
+#-------------------------------------------------------------
+FROM base AS ros1
+
+# Avoid interactive prompts during package installation
+ARG DEBIAN_FRONTEND=noninteractive
+
+ARG ROS1_VERSION=noetic
+ARG ROS1_MIRROR_URL=https://mirrors.ustc.edu.cn/ros/ubuntu
+COPY docker_files/nros-install-ros1 /tmp/
+RUN bash /tmp/nros-install-ros1 \
+  --ros1-version ${ROS1_VERSION} \
+  --mirror ${ROS1_MIRROR_URL} \
+  --install-gazebo ${INSTALL_GAZEBO} \
+  --rosdep-update ${ROSDEP_UPDATE} \ 
+  && sudo rm /tmp/nros-install-ros1
 
 #-------------------------------------------------------------
 # ROS 2
@@ -90,42 +121,3 @@ RUN bash /tmp/nros-install-ros2 \
 
 # 添加 ros2_rc 实用脚本
 COPY --chown=$USERNAME:$USERNAME docker_files/ros2_rc/${ROS2_VERSION} /home/${USERNAME}/.local/ros2_rc
-
-#-------------------------------------------------------------
-# ROS 1
-#-------------------------------------------------------------
-FROM base AS ros1
-
-# Avoid interactive prompts during package installation
-ARG DEBIAN_FRONTEND=noninteractive
-
-ARG ROS1_VERSION=noetic
-ARG ROS1_MIRROR_URL=https://mirrors.ustc.edu.cn/ros/ubuntu
-COPY docker_files/nros-install-ros1 /tmp/
-RUN bash /tmp/nros-install-ros1 \
-  --ros1-version ${ROS1_VERSION} \
-  --mirror ${ROS1_MIRROR_URL} \
-  --install-gazebo ${INSTALL_GAZEBO} \
-  --rosdep-update ${ROSDEP_UPDATE} \ 
-  && sudo rm /tmp/nros-install-ros1
-
-
-# -------------------------------------------------------------
-# Final Stage
-# -------------------------------------------------------------
-FROM ${ROS_TARGET} AS final
-
-# zsh
-RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
-  && git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k \
-  && git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
-  && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
-  && git clone https://github.com/conda-incubator/conda-zsh-completion ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/conda-zsh-completion
-
-# Copy dotfiles
-COPY --chown=$USERNAME:$USERNAME docker_files/dotfiles/home/ /home/${USERNAME}/
-
-# 防止 git 输出中文路径时出现乱码
-# Remove docker-clean to enable auto-completion for apt
-RUN git config --global core.quotepath false \
-  && sudo rm /etc/apt/apt.conf.d/docker-clean || true

@@ -72,6 +72,7 @@ class DockerCmdGenerator:
 
         no_privileged = getattr(args, "no_privileged", False)
         self.privileged = not no_privileged
+        self.rt = getattr(args, "rt", False)
 
         print(f"Image name: {BLUE}{self.image_name}{RESET}")
         print(f"Container name: {BLUE}{self.container_name}{RESET}")
@@ -131,11 +132,11 @@ class DockerCmdGenerator:
                 print("Failed to create container")
                 sys.exit(1)
             print("Container created successfully.")
-            
+
             # Install dotfiles if provided
             if self.dotfiles_path:
                 self.__install_dotfiles()
-            
+
             print("\nDone.\n\nYou can attach to the container using vscode or by running one of the following command:")
             print(f"    docker exec -it {self.container_name} bash")
             print(f"    docker exec -it {self.container_name} zsh\n")
@@ -177,12 +178,12 @@ class DockerCmdGenerator:
         """Copy dotfiles to container and run install.sh"""
         if not self.dotfiles_path:
             return
-        
+
         print(f"\n{GREEN}Installing dotfiles from {self.dotfiles_path}...{RESET}")
-        
+
         # Create a temporary directory in the container
         temp_dir = "/tmp/dotfiles_install"
-        
+
         # Copy dotfiles to container
         print(f"Copying dotfiles to container...")
         copy_cmd = ["docker", "cp", self.dotfiles_path, f"{self.container_name}:{temp_dir}"]
@@ -190,7 +191,7 @@ class DockerCmdGenerator:
         if result.returncode != 0:
             print(f"{RED}Failed to copy dotfiles to container: {result.stderr}{RESET}")
             return
-        
+
         # Check if install.sh exists
         check_cmd = ["docker", "exec", self.container_name, "test", "-f", f"{temp_dir}/install.sh"]
         result = subprocess.run(check_cmd, capture_output=True)
@@ -205,7 +206,7 @@ class DockerCmdGenerator:
                 print(f"{RED}Warning: install.sh exited with code {result.returncode}{RESET}")
             else:
                 print(f"{GREEN}Dotfiles installed successfully.{RESET}")
-        
+
         # Clean up temporary directory
         print(f"Cleaning up temporary directory...")
         cleanup_cmd = ["docker", "exec", self.container_name, "rm", "-rf", temp_dir]
@@ -311,6 +312,9 @@ class DockerCmdGenerator:
         if self.privileged:
             cmd_args.extend(["--privileged"])  # Allow access to all devices
 
+        if self.rt:
+            cmd_args.extend(["--cap-add=sys_nice", "--ulimit", "rtprio=99"])
+
         # Enable X11 GUI
         cmd_args.extend(self.__get_mount_args("/tmp/.X11-unix", "/tmp/.X11-unix", path_type="dir", options="rw"))
         env_DISPLAY = os.getenv("DISPLAY")
@@ -400,6 +404,7 @@ def main():
         default=default_dotfiles_path,
     )
     parser.add_argument("--no-privileged", action="store_true")
+    parser.add_argument("--rt", action="store_true", help="Give permissions to use real-time features (e.g., for ROS2 real-time communication)")
     args = parser.parse_args()
 
     docker_cmd_generator = DockerCmdGenerator(args)
