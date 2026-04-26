@@ -133,6 +133,12 @@ class DockerCmdGenerator:
                 sys.exit(1)
             print("Container created successfully.")
 
+            # Copy .gitconfig to container if it exists
+            home_gitconfig = os.path.join(os.getenv("HOME"), ".gitconfig")
+            if os.path.exists(home_gitconfig):
+                print(f"Copying {home_gitconfig} to container...")
+                self.__docker_cp(home_gitconfig, f"{self.__get_home_dir(self.container_user_name)}/.gitconfig")
+
             # Install dotfiles if provided
             if self.dotfiles_path:
                 self.__install_dotfiles()
@@ -174,6 +180,19 @@ class DockerCmdGenerator:
 
         return user
 
+    def __docker_cp(self, src: str, dest: str):
+        """Copy a file or directory from host to container or vice versa
+
+        Args:
+            src (str): Source path. If copying from host to container, the format should be /path/to/src. If copying from container to host, the format should be <container_name>:/path/to/src
+            dest (str): Destination path. If copying from host to container, the format should be <container_name>:/path/to/dest. If copying from container to host, the format should be /path/to/dest
+        """
+        copy_cmd = ["docker", "cp", src, f"{self.container_name}:{dest}"]
+        result = subprocess.run(copy_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            return False
+        return True
+
     def __install_dotfiles(self):
         """Copy dotfiles to container and run install.sh"""
         if not self.dotfiles_path:
@@ -186,10 +205,8 @@ class DockerCmdGenerator:
 
         # Copy dotfiles to container
         print(f"Copying dotfiles to container...")
-        copy_cmd = ["docker", "cp", self.dotfiles_path, f"{self.container_name}:{temp_dir}"]
-        result = subprocess.run(copy_cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            print(f"{RED}Failed to copy dotfiles to container: {result.stderr}{RESET}")
+        if not self.__docker_cp(self.dotfiles_path, temp_dir):
+            print(f"{RED}Failed to copy dotfiles to container.{RESET}")
             return
 
         # Check if install.sh exists
@@ -349,8 +366,8 @@ class DockerCmdGenerator:
         # Mount .ssh directory
         cmd_args.extend(self.__get_mount_args(f"{HOME}/.ssh", f"{CONTAINER_HOME}/.ssh", "dir"))
 
-        # Mount .gitconfig
-        cmd_args.extend(self.__get_mount_args(f"{HOME}/.gitconfig", f"{CONTAINER_HOME}/.gitconfig", "file"))
+        # Mount .gitconfig（Mount 方式会导致 git lfs install 失败，改成创建容器后复制的方式）
+        # cmd_args.extend(self.__get_mount_args(f"{HOME}/.gitconfig", f"{CONTAINER_HOME}/.gitconfig", "file"))
 
         # Mount rc_file
         if self.rc_file:
