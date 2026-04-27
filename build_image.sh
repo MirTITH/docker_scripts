@@ -10,7 +10,7 @@ DOCKER_IMAGE_NAME=""
 
 
 # Docker 构建参数
-TARGET=""
+TARGET="base"
 DOCKER_ARG_LOCALE="C.UTF-8"
 DOCKER_ARG_TZ=""       # 如果为空则自动检测
 DOCKER_ARG_USERNAME="" # 如果为空则自动检测
@@ -32,7 +32,7 @@ print_usage() {
     echo "  docker_image_name      要构建的 Docker 镜像名称"
     echo ""
     echo "选项:"
-    echo "  --target TARGET        设置构建目标，例如：base, ros1, ros2，留空则使用 dockerfile 默认目标"
+    echo "  --target TARGET        设置构建目标，例如：base, ros1, ros2，默认为 ${TARGET}"
     echo "  --locale LOCALE        设置语言环境 (默认: ${DOCKER_ARG_LOCALE})"
     echo "  --timezone TIMEZONE    设置时区 (默认: 自动检测, 例如: Asia/Shanghai)"
     echo "  --username USERNAME    设置用户名 (默认: 当前用户)"
