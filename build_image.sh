@@ -18,11 +18,11 @@ DOCKER_ARG_UID=""      # 如果为空则自动检测
 DOCKER_ARG_GID=""      # 如果为空则自动检测
 
 # 镜像源
-# DOCKER_ARG_UBUNTU_MIRROR="http://mirrors.osa.moe/ubuntu"
-# DOCKER_ARG_ROS2_MIRROR_URL="http://mirrors.osa.moe/ros2/ubuntu"
-DOCKER_ARG_UBUNTU_MIRROR="http://mirrors.ustc.edu.cn/ubuntu"
-DOCKER_ARG_ROS2_MIRROR_URL="http://mirrors.ustc.edu.cn/ros2/ubuntu"
-DOCKER_ARG_ROS1_MIRROR_URL="http://mirrors.ustc.edu.cn/ros/ubuntu"
+# DOCKER_ARG_UBUNTU_MIRROR="https://mirrors.osa.moe/ubuntu"
+# DOCKER_ARG_ROS2_MIRROR_URL="https://mirrors.osa.moe/ros2/ubuntu"
+DOCKER_ARG_UBUNTU_MIRROR="https://mirrors.ustc.edu.cn/ubuntu"
+DOCKER_ARG_ROS2_MIRROR_URL="https://mirrors.ustc.edu.cn/ros2/ubuntu"
+DOCKER_ARG_ROS1_MIRROR_URL="https://mirrors.ustc.edu.cn/ros/ubuntu"
 
 print_usage() {
     echo "用法: $0 <ubuntu_version> <docker_image_name> [选项]"
@@ -44,7 +44,7 @@ print_usage() {
     echo "  --help, -h             显示此帮助信息并退出"
     echo ""
     echo "示例:"
-    echo "  $0 22.04 my-ros2-image --locale zh_CN.UTF-8"
+    echo "  $0 22.04 my-ros2-image --target ros2"
 }
 
 get_timezone() {

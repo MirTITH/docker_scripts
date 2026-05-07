@@ -14,11 +14,15 @@ RUN userdel -r ubuntu 2>/dev/null || true
 # Ubuntu 换源
 # 配置语言和时区
 # 安装基础工具
-ARG UBUNTU_MIRROR=http://mirrors.ustc.edu.cn/ubuntu
+ARG UBUNTU_MIRROR=https://mirrors.ustc.edu.cn/ubuntu
 ARG LOCALE=en_US.UTF-8
 ENV LANG=${LOCALE}
 ENV LC_ALL=${LOCALE}
 ENV TZ=Asia/Shanghai
+
+# 安装 ca-certificates 以支持 HTTPS 镜像源
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
 COPY docker_files/nros-change-mirror /tmp/
 RUN /tmp/nros-change-mirror ${UBUNTU_MIRROR} --no-update && rm /tmp/nros-change-mirror \
   \

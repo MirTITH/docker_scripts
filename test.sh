@@ -5,9 +5,9 @@ script_path=$(readlink -f "$0")      # 脚本文件的绝对路径
 script_dir=$(dirname "$script_path") # 脚本文件的目录
 build_image_sh="$script_dir/build_image.sh"
 
-UBUNTU_MIRROR="http://mirrors.osa.moe/ubuntu"
-ROS1_MIRROR_URL="http://mirrors.osa.moe/ros/ubuntu"
-ROS2_MIRROR_URL="http://mirrors.osa.moe/ros2/ubuntu"
+UBUNTU_MIRROR="https://mirrors.osa.moe/ubuntu"
+ROS1_MIRROR_URL="https://mirrors.osa.moe/ros/ubuntu"
+ROS2_MIRROR_URL="https://mirrors.osa.moe/ros2/ubuntu"
 
 echo "-------------------------------------"
 echo "正在构建 20.04 + ROS1 Noetic 镜像..."

@@ -3,12 +3,12 @@
 set -euo pipefail
 
 MIRRORS=(
-    http://mirrors.osa.moe/ubuntu
-    http://mirrors.ustc.edu.cn/ubuntu
-    http://mirrors.huaweicloud.com/ubuntu
-    http://mirrors.tuna.tsinghua.edu.cn/ubuntu
-    http://mirrors.aliyun.com/ubuntu
-    http://archive.ubuntu.com/ubuntu
+    https://mirrors.osa.moe/ubuntu
+    https://mirrors.ustc.edu.cn/ubuntu
+    https://mirrors.huaweicloud.com/ubuntu
+    https://mirrors.tuna.tsinghua.edu.cn/ubuntu
+    https://mirrors.aliyun.com/ubuntu
+    https://archive.ubuntu.com/ubuntu
 )
 
 MIRROR_NAMES=(

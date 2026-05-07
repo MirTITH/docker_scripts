@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROS1_VERSION=""
-ROS1_MIRROR_URL="http://mirrors.ustc.edu.cn/ros/ubuntu"
+ROS1_MIRROR_URL="https://mirrors.ustc.edu.cn/ros/ubuntu"
 INSTALL_GAZEBO=false
 ROSDEP_UPDATE=false
 
